@@ -8,6 +8,7 @@ const electron = require('electron');
 const remote = electron.remote;
 const shell = electron.shell;
 const Common = require('./common');
+const task = require('./task');
 
 require('./menu');
 
@@ -270,7 +271,7 @@ function delProject(cb) {
     cb && cb();
 }
 
-function runTask(taskName, context) {
+async function runTask(taskName, context) {
     $logStatus.text('Running...');
 
     let projectPath = $curProject.attr('title');
@@ -280,13 +281,15 @@ function runTask(taskName, context) {
             killBs();
             $logStatus.text('Done');
         } else {
-            dev(projectPath, function (data) {
-                logReply(data);
-            }, function (bs) {
-                bsObj[projectPath] = bs;
-                setWatching();
-                $logStatus.text('Done');
-            });
+            // dev(projectPath, function (data) {
+            //     logReply(data);
+            // }, function (bs) {
+            //     bsObj[projectPath] = bs;
+            //     setWatching();
+            //     $logStatus.text('Done');
+            // });
+            await task.dev(projectPath);
+            $logStatus.text('Done');
         }
     }
 

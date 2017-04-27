@@ -1,44 +1,45 @@
 'use strict';
 
 let gulp = require('gulp'),
-    conf = require('../lib/config'),
     sourceMaps = require('gulp-sourcemaps'),
     less = require('gulp-less'),
-    sass = require('gulp-sass'),
-    browserSync = require('./server').browserSync,
-    runSequence = require('../lib/run-sequence'),
+    // browserSync = require('./server').browserSync,
+    // runSequence = require('../lib/run-sequence'),
+    sass = require('../plugin/sass'),
     _ = require('lodash'),
     fs = require('fs'),
     path = require('path');
 
-let compileLess = () => {
+let compileLess = exports.compileLess = (projectPath) => {
     return new Promise((resolve) => {
-        gulp.src(conf.config.src.pic + '/**/*.less')
+        gulp.src(path.join(projectPath, './less/**/*.less'))
             .pipe(sourceMaps.init())
             .pipe(less().on('error', (e) => {
                 console.error(e.message);
                 this.emit('end');
             }))
             .pipe(sourceMaps.write())
-            .pipe(gulp.dest(conf.config.src.pic))
+            .pipe(gulp.dest(path.join(projectPath, './css')))
+            .on('end', () => {
+                resolve();
+            });
+    })
+};
+
+let compileSass = exports.compileSass = (projectPath) => {
+    return new Promise((resolve) => {
+        gulp.src(path.join(projectPath, './sass/**/*.?(scss|sass)'))
+            .pipe(sourceMaps.init())
+            .pipe(sass().on('error', (e) => {
+                console.error(e.message);
+                this.emit('end');
+            }))
+            .pipe(sourceMaps.write())
+            .pipe(gulp.dest(path.join(projectPath, './css')))
             .on('end', () => {
                 resolve();
             });
     });
-};
-
-let compileSass = (cb) => {
-    gulp.src(conf.config.pic + '/**/*.?(scss|sass)')
-        .pipe(sourceMaps.init())
-        .pipe(sass().on('error', (e) => {
-            console.error(e.message);
-            this.emit('end');
-        }))
-        .pipe(sourceMaps.write())
-        .pipe(gulp.dest(conf.config.src.pic))
-        .on('end', () => {
-            cb();
-        });
 };
 
 exports.compile = (cb) => {
