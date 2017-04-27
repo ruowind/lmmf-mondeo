@@ -1,8 +1,10 @@
 "use strict";
 
-let cssTask = require('./css');
+const cssTask = require('./css');
+const serverTask = require('./server');
 
-exports.dev = async(projectPath, cb) => {
-    await cssTask.compileLess(projectPath, cb);
-    await cssTask.compileSass(projectPath, cb);
+exports.dev = async(projectConfig) => {
+    await cssTask.compile(projectConfig);
+    let bs = serverTask.startServer(projectConfig);
+    return bs;
 };

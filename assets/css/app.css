@@ -1,6 +1,6 @@
 html,
 body {
-    width: 360px;
+    width: 100%;
     min-height: 572px;
     overflow: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
@@ -8,7 +8,7 @@ body {
 
 .wraper {
     position: relative;
-    width: 360px;
+    width: 100%;
     min-height: 572px;
     overflow: hidden;
 }
@@ -444,14 +444,14 @@ body {
 .tasks__button {
     position: relative;
     display: block;
-    width: 60px;
+    width: 80px;
     height: 28px;
     line-height: 28px;
     background-color: #fff;
     text-align: center;
     padding: 0;
     color: #4A90E2;
-    font-size: 15px;
+    font-size: 14px;
     border: 0;
     cursor: pointer;
 }
@@ -579,11 +579,18 @@ body {
     top: 0;
     z-index: 9;
     width: 100%;
-    height: 552px;
+    height: 562px;
     background-color: rgba(255, 255, 255, .9);
     -webkit-backdrop-filter: brightness(1.5) blur(15px);
     overflow: auto;
     padding: 20px 0 10px;
+}
+
+.setting h2 {
+    margin: 0;
+    text-align: center;
+    font-size: 18px;
+    font-weight: normal;
 }
 
 .setting__section {
@@ -599,7 +606,7 @@ body {
 
 .setting__bd {
     position: relative;
-    padding: 0 15px;
+    padding-left: 15px;
 }
 
 input:focus {
@@ -608,7 +615,6 @@ input:focus {
 
 .ui-text {
     position: relative;
-    width: 300px;
     height: 22px;
     line-height: 22px;
     background-color: #fff;
@@ -616,6 +622,11 @@ input:focus {
     border-radius: 2px;
     margin-bottom: 10px;
     padding: 0 1px;
+    display: flex;
+}
+
+.ui-text label {
+    width: 70px;
 }
 
 .ui-text_short {
@@ -631,15 +642,18 @@ input:focus {
 .ui-text input {
     position: relative;
     z-index: 1;
-    width: 100%;
-    height: 20px;
+    height: 22px;
     line-height: 20px;
-    border: none;
     padding: 0 5px;
     color: #3B99FC;
+    border: 1px solid #3B99FC;
+    border-radius: 2px;
+    margin-left: 10px;
+    width: 230px;
 }
 
-.ui-text:after {
+
+/*.ui-text:after {
     content: '';
     width: 100%;
     height: 100%;
@@ -649,7 +663,7 @@ input:focus {
     top: 0;
     border: 1px solid #3B99FC;
     border-radius: 2px;
-}
+}*/
 
 .ui-text:focus {
     outline: none;
@@ -660,7 +674,7 @@ input:focus {
 }
 
 .ui-checkbox {
-    display: block;
+    display: flex;
     color: #333333;
     font-size: 12px;
     margin-bottom: 10px;
@@ -668,14 +682,15 @@ input:focus {
 
 .ui-checkbox label {
     position: relative;
-    margin-left: 7px;
+    padding-left: 20px;
+    user-select: none;
     -webkit-user-select: none;
 }
 
 .ui-checkbox input+label:before {
     content: '';
     position: absolute;
-    left: -23px;
+    left: 0;
     top: 1px;
     width: 14px;
     height: 14px;

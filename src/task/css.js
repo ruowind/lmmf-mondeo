@@ -3,61 +3,53 @@
 let gulp = require('gulp'),
     sourceMaps = require('gulp-sourcemaps'),
     less = require('gulp-less'),
-    // browserSync = require('./server').browserSync,
-    // runSequence = require('../lib/run-sequence'),
     sass = require('../plugin/sass'),
     _ = require('lodash'),
-    fs = require('fs'),
     path = require('path');
 
-let compileLess = exports.compileLess = (projectPath) => {
+let compileLess = exports.compileLess = (projectConfig) => {
     return new Promise((resolve) => {
-        gulp.src(path.join(projectPath, './less/**/*.less'))
+        gulp.src(path.join(projectConfig.path, './less/**/*.less'))
             .pipe(sourceMaps.init())
             .pipe(less().on('error', (e) => {
                 console.error(e.message);
                 this.emit('end');
             }))
             .pipe(sourceMaps.write())
-            .pipe(gulp.dest(path.join(projectPath, './css')))
+            .pipe(gulp.dest(path.join(projectConfig.path, './css')))
             .on('end', () => {
                 resolve();
             });
     })
 };
 
-let compileSass = exports.compileSass = (projectPath) => {
+let compileSass = exports.compileSass = (projectConfig) => {
     return new Promise((resolve) => {
-        gulp.src(path.join(projectPath, './sass/**/*.?(scss|sass)'))
+        gulp.src(path.join(projectConfig.path, './sass/**/*.?(scss|sass)'))
             .pipe(sourceMaps.init())
             .pipe(sass().on('error', (e) => {
                 console.error(e.message);
                 this.emit('end');
             }))
             .pipe(sourceMaps.write())
-            .pipe(gulp.dest(path.join(projectPath, './css')))
+            .pipe(gulp.dest(path.join(projectConfig.path, './css')))
             .on('end', () => {
                 resolve();
             });
     });
 };
 
-exports.compile = (cb) => {
-    runSequence([compileLess, compileSass]).done(() => {
-        cb();
-    });
+exports.compile = async(projectConfig) => {
+    await compileLess(projectConfig);
+    await compileSass(projectConfig);
 };
 
-exports.compileOne = (src, dest) => {
+exports.compileOne = (src, projectConfig, bs) => {
     let fileType = _.trimStart(path.extname(src), '.');
     switch (fileType) {
         case 'css':
-            let cssPathNoExt = _.trimEnd(path.resolve(conf.cwd, src), 'css');
-            if (!fs.existsSync(cssPathNoExt + 'less') && !fs.existsSync(cssPathNoExt + 'scss')) {
-                gulp.src(src)
-                    .pipe(gulp.dest(dest))
-                    .pipe(browserSync.stream());
-            }
+            gulp.src(src)
+                .pipe(bs.stream());
             break;
         case 'less':
             gulp.src(src)
@@ -67,10 +59,10 @@ exports.compileOne = (src, dest) => {
                     this.emit('end');
                 }))
                 .pipe(sourceMaps.write())
-                .pipe(gulp.dest(dest))
-                .pipe(browserSync.stream());
+                .pipe(gulp.dest(path.resolve(projectConfig.path, './css')))
             break;
         case 'scss':
+        case 'sass':
             gulp.src(src)
                 .pipe(sourceMaps.init())
                 .pipe(sass().on('error', (e) => {
@@ -78,8 +70,7 @@ exports.compileOne = (src, dest) => {
                     this.emit('end');
                 }))
                 .pipe(sourceMaps.write())
-                .pipe(gulp.dest(dest))
-                .pipe(browserSync.stream());
+                .pipe(gulp.dest(path.resolve(projectConfig.path, './css')))
             break;
     }
 };

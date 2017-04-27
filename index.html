@@ -56,13 +56,18 @@
 
   <div class="setting hide" id="js-setting">
     <a href="javascript:;" id="js-setting-close" class="icon icon-close"></a>
-    <a href="https://github.com/weixin/weflow" id="js-help" class="icon icon-help"></a>
-
+    <a href="https://github.com/ruowind/weflow" id="js-help" class="icon icon-help"></a>
+    <h2><span id="setting-project-name">全局</span>设置</h2>
     <div class="setting__section" id="js-workspace">
-      <div class="setting__hd">工作区路径</div>
+      <div class="setting__hd">SVN路径</div>
       <div class="setting__bd">
         <div class="ui-text">
-          <input type="text" data-workspace="true" id="js-form-workspace" value="/Users/Apple/Workspace/Projects/">
+          <label>页面路径</label>
+          <input type="text" data-workspace="true" id="js-svn-page" value="">
+        </div>
+        <div class="ui-text">
+          <label>资源路径</label>
+          <input type="text" data-workspace="true" id="js-svn-static" value="">
         </div>
       </div>
     </div>
@@ -75,20 +80,12 @@
           <label for="livereload">开启 LiveReload 浏览器自动刷新</label>
         </div>
         <div class="ui-checkbox">
-          <input type="checkbox" name="supportREM" id="supportREM">
-          <label for="supportREM">开启 REM 适配解决方案</label>
-        </div>
-        <div class="ui-checkbox">
-          <input type="checkbox" name="supportWebp" id="supportWebp">
-          <label for="supportWebp">开启 智能 WebP 解决方案</label>
+          <input type="checkbox" name="compress" id="compress">
+          <label for="compress">开启 js/css 压缩</label>
         </div>
         <div class="ui-checkbox">
           <input type="checkbox" name="reversion" id="reversion">
           <label for="reversion">开启 文件版本 (MD5) 去缓存解决方案</label>
-        </div>
-        <div class="ui-checkbox">
-          <input type="checkbox" name="supportChanged" id="supportChanged">
-          <label for="supportChanged">开启 文件变动增量编译支持</label>
         </div>
       </div>
     </div>
@@ -96,26 +93,25 @@
     <div class="setting__section">
       <div class="setting__hd">设置</div>
       <div class="setting__bd">
-        <label class="setting__subtitle">上传配置(默认为 FTP)</label>
-        <div class="ui-text ui-text_short">
-          <input type="text" name="ftp-host" placeholder="服务器地址" value="">
-        </div>
-        <div class="ui-checkbox sftp">
-          <input type="checkbox" name="ftp-ssh" id="sftp">
-          <label for="sftp">使用 SFTP</label>
-        </div>
-        <div class="ui-text ui-text_short">
-          <input type="text" name="ftp-user" placeholder="用户名" value="">
-        </div>
-        <div class="ui-text ui-text_short">
-          <input type="password" name="ftp-pass" placeholder="密码" value="">
+        <div class="ui-text">
+          <label>js路径</label>
+          <input type="text" data-workspace="true" id="js-path" value="">
         </div>
         <div class="ui-text">
-          <input type="text" name="ftp-remotePath" placeholder="远程路径" value="">
+          <label>css路径</label>
+          <input type="text" data-workspace="true" id="css-path" value="">
         </div>
-        <div class="ui-checkbox">
-          <input type="checkbox" name="ftp-includeHtml" id="ftp-includeHtml">
-          <label for="ftp-includeHtml">上传文件包含 .html 文件类型</label>
+        <div class="ui-text">
+          <label>less路径</label>
+          <input type="text" data-workspace="true" id="less-path" value="">
+        </div>
+        <div class="ui-text">
+          <label>sass路径</label>
+          <input type="text" data-workspace="true" id="sass-path" value="">
+        </div>
+        <div class="ui-text">
+          <label>images路径</label>
+          <input type="text" data-workspace="true" id="img-path" value="">
         </div>
       </div>
     </div>
