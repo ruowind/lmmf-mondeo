@@ -109,16 +109,13 @@ $('#js-tasks').find('.tasks__button').on('click', async function () {
 //3. 显示 workspace 设置区域
 //4. 隐藏 删除项目 按钮
 $settingButton.on('click', function () {
-    settingFn();
-});
-
-function settingFn() {
     // curConfigPath = Common.CONFIGPATH;
     // initConfig();
 
     if ($setting.hasClass('hide')) {
+        initConfig();
         $setting.removeClass('hide');
-        $setting.data('config', 'all');
+        $setting.removeData('path');
         $settingProjectName.text('全局');
         $workspaceSection.show();
         // $workspaceSection.removeClass('hide');
@@ -126,11 +123,49 @@ function settingFn() {
     } else {
         $setting.addClass('hide');
     }
-}
+});
 
 //关闭设置面板
 $settingClose.on('click', function () {
     $setting.addClass('hide');
+    let projectPath = $setting.data('path');
+    // 项目配置
+    if (projectPath) {
+        let config = {};
+        $setting.find('input').each(function (index, item) {
+            let $item = $(item);
+            if ($item.data('workspace') != 'true') {
+                let name = $item.attr('name');
+                let val = $.trim($item.val());
+                let checked = $item.prop('checked');
+                let type = $item.attr('type');
+                config[name] = type === 'text' ? val : checked;
+            }
+        });
+        fs.writeFile(path.join(projectPath, Common.CONFIGNAME), JSON.stringify(config, null, 4), function (err) {
+            if (err) {
+                throw new Error(err);
+            }
+
+            console.log('write config success.');
+        });
+    } else {
+        let config = {};
+        $setting.find('input').each(function (index, item) {
+            let $item = $(item);
+            if ($item.data('project') != 'true') {
+                let name = $item.attr('name');
+                let val = $.trim($item.val());
+                let checked = $item.prop('checked');
+                let type = $item.attr('type');
+                config[name] = type === 'text' ? val : checked;
+            }
+        });
+        let storage=Common.getStorage();
+        storage.workconfig=config;
+        Common.setStorage(storage);
+    }
+
 });
 
 //点击项目信息的时候
@@ -141,34 +176,69 @@ $settingClose.on('click', function () {
 //5.显示 项目删除 按钮
 //6.显示设置面板
 $projectList.on('click', '.projects__info', function () {
-    settingCurrentProject();
-});
-
-function settingCurrentProject() {
     let projectPath = $curProject.attr('title');
     $settingProjectName.text($curProject.data('project') + ' ');
-    $setting.data('config', $curProject.data('project'));
     $workspaceSection.hide();
-    // curConfigPath = path.join(projectPath, Common.CONFIGNAME);
-
-    // //如果当前项目下的 config 不存在的时候,先挪过去
-    // if (!Common.fileExist(curConfigPath)) {
-    //     gulp.src(Common.CONFIGPATH)
-    //         .pipe(gulp.dest(projectPath))
-    //         .on('end', function () {
-    //             console.log('create weflow.config.json success');
-    //             initConfig();
-    //         });
-    // } else {
-    //     initConfig();
-    // }
-
+    $setting.data('path', projectPath);
+    initConfig(projectPath);
     // $workspaceSection.addClass('hide');
     // $delProjectBtn.removeClass('hide');
     $setting.removeClass('hide');
+});
+
+
+//初始化设置面板数据
+//重要的是每次都需要加载特定设置文件,如区分出是 全局, 或是 项目设置, 用一个全局变量 curConfigPath 保存着
+function initConfig(projectPath) {
+    let config;
+    if (projectPath) {
+        //需要去缓存加载
+        config = Common.requireUncached(path.join(projectPath, Common.CONFIGNAME));
+    } else {
+        config = Common.getStorage().workconfig;
+    }
+
+    for (let i in config) {
+        let $el = $(`input[name=${i}]`);
+        if ($el && $el.length) {
+            if ($el.attr('type') === 'text') {
+                $el.val(config[i]);
+            } else {
+                $el.prop('checked', config[i]);
+            }
+        }
+    }
 }
 
+//更新配置
+//为了不频繁更新,每次变动后隔1500毫秒后更新
+function updateConfig($this) {
+    let name = $this.attr('name');
+    let val = $.trim($this.val());
+    let checked = $this.prop('checked');
+    let type = $this.attr('type');
 
+    let nameArr = name.split('-');
+    let pname = nameArr[0];
+    let cname = nameArr[1];
+
+    if (cname) {
+        config[pname][cname] = type === 'text' ? val : checked;
+    } else {
+        config[pname] = type === 'text' ? val : checked;
+    }
+
+    //写入configPath
+    changeTimer = setTimeout(function () {
+        fs.writeFile(curConfigPath, JSON.stringify(config, null, 4), function (err) {
+            if (err) {
+                throw new Error(err);
+            }
+
+            console.log('update config success.');
+        })
+    }, 1500);
+}
 
 
 //如果是第一次打开,设置数据并存储
@@ -281,6 +351,28 @@ function openProject(projectPath) {
 
         //插入打开的项目
         insertOpenProject(projectPath);
+
+
+        let curConfigPath = path.join(projectPath, Common.CONFIGNAME);
+
+        //如果当前项目下的 config 不存在的时候,写入全局配置
+        if (!Common.fileExist(curConfigPath)) {
+            let storage = Common.getStorage();
+            let projectConfig = storage.workconfig;
+            // 删除不必要的配置
+            delete projectConfig.svnPage;
+            delete projectConfig.svnStatic;
+            // 添加项目配置
+            projectConfig.projectPath = '';
+
+            fs.writeFile(curConfigPath, JSON.stringify(projectConfig, null, 4), function (err) {
+                if (err) {
+                    throw new Error(err);
+                }
+
+                console.log('write config success.');
+            });
+        }
     }
 
 }
@@ -307,8 +399,6 @@ function insertOpenProject(projectPath) {
     $projectList.append($projectHtml);
 
     $projectList.scrollTop($projectList.get(0).scrollHeight);
-
-    // $projectHtml.trigger('click');
 
     //只有在节点成功插入了才保存进 storage
     let storage = Common.getStorage();
