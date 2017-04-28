@@ -20,7 +20,7 @@ function htmlDep(file) {
     while (regGroups = CSS_HREF_REG.exec(fileString)) {
         if (regGroups[1]) {
             let cssUrl = regGroups[1];
-            if (cssUrl.substr(0, 3) === '../' && path.extname(cssUrl) === '.css') {
+            if (cssUrl.substr(0, 2) !== 'ht' && cssUrl.substr(0, 2) !== '//' && path.extname(cssUrl) === '.css') {
                 cssUrls.push(path.resolve(path.dirname(file.path), cssUrl));
             }
         }
@@ -29,7 +29,7 @@ function htmlDep(file) {
     while (regGroups = JS_SRC_REG.exec(fileString)) {
         if (regGroups[1]) {
             let jsUrl = regGroups[1];
-            if (jsUrl.substr(0, 3) === '../' && path.extname(jsUrl) === '.js') {
+            if (jsUrl.substr(0, 2) !== 'ht' && jsUrl.substr(0, 2) !== '//' && path.extname(jsUrl) === '.js') {
                 jsUrls.push(path.resolve(path.dirname(file.path), jsUrl));
             }
         }
@@ -51,7 +51,7 @@ function cssDep(file) {
             let b = regGroups[1].match(IMAGE_URL_RE);
             if (b && b[1]) {
                 let imgUrl = b[1].replace(/'/g, '').replace(/"/g, '');
-                if (imgUrl.substr(0, 3) === '../') {
+                if (imgUrl.substr(0, 2) !== 'ht' && imgUrl.substr(0, 3) !== '//') {
                     if (imgUrl.indexOf('?') > 0) {
                         imgUrl = imgUrl.substr(0, imgUrl.indexOf('?'));
                     }

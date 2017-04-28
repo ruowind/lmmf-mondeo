@@ -27,7 +27,6 @@ function replaceInlineImg(file) {
 }
 
 function main() {
-
     let step1 = function (file, enc, cb) {
         if (file.isStream()) {
             this.emit('error', new PluginError(PLUGIN_NAME, 'Streams are not supported!'));

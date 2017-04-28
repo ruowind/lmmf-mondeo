@@ -3,7 +3,6 @@
 let through = require('through2'),
     gutil = require('gulp-util'),
     path = require('path'),
-    conf = require('../lib/config'),
     _ = require('lodash'),
     PluginError = gutil.PluginError,
     PLUGIN_NAME = 'gulp-build-html',
@@ -13,16 +12,27 @@ let through = require('through2'),
     JS_CONCAT_REG = /<!--js-concat-->([\s\S]*?)<!--js-concat-end-->/g,
     JS_SRC_REG = /(?:<!--[\s\S]*?(?:-->|$))|src=["|']([^"']*)["|']/g,
     JS_PATH_REG = /\/js\/.*/g;
+let cdnDomain = 'http://pic.lvmama.com',
+    cdnPath = '/min/index.php?f=';
 
-function main() {
+function main(config) {
     function concatUrl(fileString, fileType) {
         return fileString.replace(fileType === 'css' ? CSS_CONCAT_REG : JS_CONCAT_REG, function (m, concatContent) {
             let relativePaths = [];
             let regGroups;
             while (regGroups = (fileType === 'css' ? CSS_HREF_REG : JS_SRC_REG).exec(concatContent)) {
-                regGroups[1] && relativePaths.push(_.trimStart(regGroups[1].match(fileType === 'css' ? CSS_PATH_REG : JS_PATH_REG)[0], '/'));
+                if (regGroups[1]) {
+                    if (regGroups[1].indexOf('//') > -1 && regGroups[1].match(fileType === 'css' ? CSS_PATH_REG : JS_PATH_REG)) {
+                        relativePaths.push(_.trimStart(regGroups[1].match(fileType === 'css' ? CSS_PATH_REG : JS_PATH_REG)[0], '/'));
+                    } else {
+                        let IMG_DOMAIN_REG = new RegExp('.*?(' + (fileType === 'css' ? config.cssPath : config.jsPath) + '/)');
+                        let a = regGroups[1].replace(IMG_DOMAIN_REG, '');
+                        relativePaths.push((fileType === 'css' ? 'styles/' : 'js/') + config.projectPath + '/' + regGroups[1].replace(IMG_DOMAIN_REG, ''));
+                    }
+                }
+                // regGroups[1] && regGroups[1].match(fileType === 'css' ? CSS_PATH_REG : JS_PATH_REG) && relativePaths.push(_.trimStart(regGroups[1].match(fileType === 'css' ? CSS_PATH_REG : JS_PATH_REG)[0], '/'));
             }
-            return fileType === 'css' ? '<link rel="stylesheet" href="' + conf.config.cdn.domain + conf.config.cdn.path + relativePaths.join(',') + '">' : '<script src="' + conf.config.cdn.domain + conf.config.cdn.path + relativePaths.join(',') + '"></script>';
+            return fileType === 'css' ? '<link rel="stylesheet" href="' + cdnDomain + cdnPath + relativePaths.join(',') + '">' : '<script src="' + cdnDomain + cdnPath + relativePaths.join(',') + '"></script>';
         });
     }
 

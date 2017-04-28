@@ -21,6 +21,7 @@ let $setting = $('#js-setting');
 let $settingClose = $('#js-setting-close');
 let $settingProjectName = $('#setting-project-name');
 let $workspaceSection = $('#js-workspace');
+let $settingProjectPath = $('#setting-project-path');
 let $log = $('#js-log');
 let $logContent = $log.find('.logs__inner');
 let $logStatus = $('#js-logs-status');
@@ -49,7 +50,7 @@ $projectList.on('click', '.projects__list-item', function () {
     $this.addClass('projects__list-item_current');
     $curProject = $this;
 
-    if ($this.data('watch')) {
+    if ($this.data('watching')) {
         setWatching();
     } else {
         setNormal();
@@ -118,6 +119,7 @@ $settingButton.on('click', function () {
         $setting.removeData('path');
         $settingProjectName.text('全局');
         $workspaceSection.show();
+        $settingProjectPath.hide();
         // $workspaceSection.removeClass('hide');
         // $delProjectBtn.addClass('hide');
     } else {
@@ -161,8 +163,8 @@ $settingClose.on('click', function () {
                 config[name] = type === 'text' ? val : checked;
             }
         });
-        let storage=Common.getStorage();
-        storage.workconfig=config;
+        let storage = Common.getStorage();
+        storage.workconfig = config;
         Common.setStorage(storage);
     }
 
@@ -179,6 +181,7 @@ $projectList.on('click', '.projects__info', function () {
     let projectPath = $curProject.attr('title');
     $settingProjectName.text($curProject.data('project') + ' ');
     $workspaceSection.hide();
+    $settingProjectPath.show();
     $setting.data('path', projectPath);
     initConfig(projectPath);
     // $workspaceSection.addClass('hide');
@@ -209,37 +212,6 @@ function initConfig(projectPath) {
         }
     }
 }
-
-//更新配置
-//为了不频繁更新,每次变动后隔1500毫秒后更新
-function updateConfig($this) {
-    let name = $this.attr('name');
-    let val = $.trim($this.val());
-    let checked = $this.prop('checked');
-    let type = $this.attr('type');
-
-    let nameArr = name.split('-');
-    let pname = nameArr[0];
-    let cname = nameArr[1];
-
-    if (cname) {
-        config[pname][cname] = type === 'text' ? val : checked;
-    } else {
-        config[pname] = type === 'text' ? val : checked;
-    }
-
-    //写入configPath
-    changeTimer = setTimeout(function () {
-        fs.writeFile(curConfigPath, JSON.stringify(config, null, 4), function (err) {
-            if (err) {
-                throw new Error(err);
-            }
-
-            console.log('update config success.');
-        })
-    }, 1500);
-}
-
 
 //如果是第一次打开,设置数据并存储
 //其他则直接初始化数据 v
@@ -297,7 +269,7 @@ function initWorkConfig() {
         reversion: true,
         jsPath: 'js',
         cssPath: 'css',
-        imagesPath: 'images',
+        imgPath: 'img',
         lessPath: 'less',
         sassPath: 'sass'
     };
@@ -454,22 +426,15 @@ function delProject(cb) {
 async function runTask(taskName, context) {
     $logStatus.text('Running...');
 
-    let projecName = $curProject.data('project');
-    let storage = Common.getStorage();
-    let projectConfig = storage.projects[projecName];
-
+    let projectPath = $curProject.attr('title');
+    let projectConfig = Common.requireUncached(path.join(projectPath, Common.CONFIGNAME));
+    projectConfig.path = projectPath;
     if (taskName === 'dev') {
-        if ($buildDevButton.data('devwatch')) {
+        if ($curProject.data('watching')) {
             killBs();
+            setNormal();
             $logStatus.text('Done');
         } else {
-            // dev(projectPath, function (data) {
-            //     logReply(data);
-            // }, function (bs) {
-            //     bsObj[projectPath] = bs;
-            //     setWatching();
-            //     $logStatus.text('Done');
-            // });
             let bs = await task.dev(projectConfig);
             bsObj[projectConfig.path] = bs;
             setWatching();
@@ -477,19 +442,23 @@ async function runTask(taskName, context) {
         }
     }
 
-    // if (taskName === 'dist') {
-    //     context.text('执行中');
-    //     dist(projectPath, function (data) {
-    //         logReply(data);
-    //     }, function () {
-    //         setTimeout(function () {
-    //             $logStatus.text('Done');
-    //             logReply('dist 编译完成');
-    //             console.log('dist 编译完成');
-    //             context.text('生产编译')
-    //         }, 500);
-    //     });
-    // }
+    if (taskName === 'dist') {
+        // context.text('执行中');
+        $logStatus.text('Running...');
+        await task.cleanDist(projectConfig);
+        await task.dist(projectConfig);
+        $logStatus.text('Done');
+        // dist(projectPath, function (data) {
+        //     logReply(data);
+        // }, function () {
+        //     setTimeout(function () {
+        //         $logStatus.text('Done');
+        //         logReply('dist 编译完成');
+        //         console.log('dist 编译完成');
+        //         context.text('生产编译')
+        //     }, 500);
+        // });
+    }
 
     // if (taskName === 'zip') {
     //     context.text('执行中');
@@ -584,17 +553,17 @@ function logReply(data) {
 function setNormal() {
     $buildDevButton.removeClass('tasks__button_watching');
     $buildDevButton.text('开发');
-    $buildDevButton.data('devwatch', false);
+    // $buildDevButton.data('devwatch', false);
 
     $curProject.removeClass('projects__list-item_watching');
-    $curProject.data('watch', false);
+    $curProject.data('watching', false);
 }
 
 function setWatching() {
     $buildDevButton.addClass('tasks__button_watching');
     $buildDevButton.text('监听中…');
-    $buildDevButton.data('devwatch', true);
+    // $buildDevButton.data('devwatch', true);
 
     $curProject.addClass('projects__list-item_watching');
-    $curProject.data('watch', true);
+    $curProject.data('watching', true);
 }

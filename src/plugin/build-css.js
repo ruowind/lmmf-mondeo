@@ -4,11 +4,9 @@ let through = require('through2'),
     gutil = require('gulp-util'),
     path = require('path'),
     crypto = require('crypto'),
-    conf = require('../lib/config'),
     PluginError = gutil.PluginError,
     PLUGIN_NAME = 'gulp-build-css',
-    IMG_URL_REG = /url\s*\(\s*("(?:[^\\"\r\n\f]|\\[\s\S])*"|'(?:[^\\'\n\r\f]|\\[\s\S])*'|[^)}]+)\s*\)/gi,
-    IMG_DOMAIN_REG = /(\.\.\/)+/g;
+    IMG_URL_REG = /url\s*\(\s*("(?:[^\\"\r\n\f]|\\[\s\S])*"|'(?:[^\\'\n\r\f]|\\[\s\S])*'|[^)}]+)\s*\)/gi;
 
 function md5(content) {
     let md5 = crypto.createHash('md5');
@@ -59,17 +57,20 @@ function main(config) {
                         // console.log('build-css-->: file: ' + imgUrl + ' not exits! so has skiped');
                     }
                 }
+
+                let cdn = ['http://pic.lvmama.com'];
+                let IMG_DOMAIN_REG = new RegExp('.*?(' + config.imgPath + '/)');
+                imgUrl = imgUrl.replace(IMG_DOMAIN_REG, function () {
+                    let index = Math.floor((Math.random() * cdn.length));
+                    return cdn[index] + '/img/' + config.projectPath + '/';
+                });
+
                 return 'url(' + imgUrl + ')';
-            });
-            let cdn = conf.config.cdn.domain;
-            fileString = fileString.replace(IMG_DOMAIN_REG, function () {
-                let index = Math.floor((Math.random() * cdn.length));
-                return cdn[index] + '/';
             });
 
             // remove sourcemap
-            // let index = fileString.indexOf('/*# sourceMappingURL=data:application/json;charset=utf8;base64,');
-            // fileString = fileString.substr(0, index - 1);
+            let index = fileString.indexOf('/*# sourceMappingURL=data:application/json;charset=utf8;base64,');
+            fileString = fileString.substr(0, index - 1);
 
             cssFile.contents = new Buffer(fileString);
             that.push(cssFile);

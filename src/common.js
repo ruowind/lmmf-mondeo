@@ -6,6 +6,7 @@ const fs = require('fs');
 class Common {}
 
 Common.NAME = 'mondeo';
+Common.DIST_PATH = 'dist';
 Common.ROOT = path.join(__dirname, '../');
 Common.WORKSPACE = `${Common.NAME}_workspace`;
 Common.CONFIGNAME = 'mondeo.json';
