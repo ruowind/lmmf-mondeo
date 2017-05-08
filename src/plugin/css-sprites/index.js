@@ -9,7 +9,7 @@ let through = require('through2'),
     PLUGIN_NAME = 'css-sprites';
 
 function main(config) {
-    let step1 = function (file, enc, cb) {
+    let step1 = async function (file, enc, cb) {
         config = config ? config : {};
         if (file.isStream()) {
             this.emit('error', new PluginError(PLUGIN_NAME, 'Streams are not supported!'));
@@ -25,7 +25,7 @@ function main(config) {
 
             let res = cssParser(fileString);
 
-            let spritesCss = imgGen(file, res.map, this, config);
+            let spritesCss = await imgGen(file, res.map, this, config);
             file.contents = new Buffer(res.content + spritesCss);
         }
         this.push(file);

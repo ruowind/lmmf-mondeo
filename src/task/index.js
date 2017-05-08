@@ -24,15 +24,17 @@ exports.dist = (projectConfig) => {
         let htmlPath = null;
 
         gulp.src(path.join(projectConfig.path, '/**/*.*'))
-            // .pipe(cssSprites({
-            //     margin: 1,
-            //     layout: 'matrix'
-            // }))
-            .pipe(cssInline())
-            .pipe(fileDep(htmlPath))
-            .pipe(cssBuild(projectConfig))
-            .pipe(buildHtml(projectConfig))
-            .pipe(organizeFiles(projectConfig))
+            .pipe(cssSprites({
+                margin: 1,
+                layout: 'matrix',
+                cssPath: projectConfig.cssPath,
+                imgPath: projectConfig.imgPath
+            }))
+            // .pipe(cssInline())
+            // .pipe(fileDep(htmlPath))
+            // .pipe(cssBuild(projectConfig))
+            // .pipe(buildHtml(projectConfig))
+            // .pipe(organizeFiles(projectConfig))
             .pipe(gulp.dest(path.join(projectConfig.path, Common.DIST_PATH)))
             .on('end', () => {
                 resolve();

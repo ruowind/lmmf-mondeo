@@ -26,7 +26,6 @@ function main(config) {
                         relativePaths.push(_.trimStart(regGroups[1].match(fileType === 'css' ? CSS_PATH_REG : JS_PATH_REG)[0], '/'));
                     } else {
                         let IMG_DOMAIN_REG = new RegExp('.*?(' + (fileType === 'css' ? config.cssPath : config.jsPath) + '/)');
-                        let a = regGroups[1].replace(IMG_DOMAIN_REG, '');
                         relativePaths.push((fileType === 'css' ? 'styles/' : 'js/') + config.projectPath + '/' + regGroups[1].replace(IMG_DOMAIN_REG, ''));
                     }
                 }

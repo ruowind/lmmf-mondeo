@@ -112,6 +112,14 @@ Rules.prototype = {
     getImageUrl: function () {
         return this.image;
     },
+    get2xImageUrl: function () {
+        let dotIndex = this.image.lastIndexOf('.');
+        return this.image.substr(0, dotIndex) + '@2x' + this.image.substr(dotIndex);
+    },
+    get3xImageUrl: function () {
+        let dotIndex = this.image.lastIndexOf('.');
+        return this.image.substr(0, dotIndex) + '@3x' + this.image.substr(dotIndex);
+    },
     getCss: function () {
         let __sprites_hook_re = /<<<[\s\S]*?>>>/g,
             ret = this._css;

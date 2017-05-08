@@ -1,15 +1,38 @@
 'use strict';
-// let Image = require('images');
+
 let path = require('path'),
     util = require('./util'),
-    // conf = require('../../../lib/config'),
-    Packer = require('./pack');
-let lwip = require('node-lwip');
+    Packer = require('./pack'),
+    lwip = require('node-lwip');
 
 function openImg(filePath) {
     return new Promise((resolve) => {
-        lwip.open('path/to/image.jpg', function (err, image) {
+        lwip.open(filePath, function (err, image) {
             resolve(image);
+        });
+    });
+}
+
+function createImg(width, height) {
+    return new Promise((resolve) => {
+        lwip.create(width, height, function (err, image) {
+            resolve(image);
+        });
+    });
+}
+
+function drawImg(oriImg, img, left, top) {
+    return new Promise((resolve) => {
+        oriImg.paste(left, top, img, function (err, image) {
+            resolve(image);
+        });
+    });
+}
+
+function toBuffer(image, formate) {
+    return new Promise((resolve) => {
+        image.toBuffer(formate, function (err, buffer) {
+            resolve(buffer);
         });
     });
 }
@@ -17,10 +40,10 @@ function openImg(filePath) {
 function Generator(cssFile, cssRules, pipeLine, settings) {
 
     let default_settings = {
-        'margin': 3,
+        'margin': 2,
         'width_limit': 10240,
         'height_limit': 10240,
-        'layout': 'linear',
+        'layout': 'matrix',
         'ie_bug_fix': true
     };
 
@@ -34,68 +57,17 @@ function Generator(cssFile, cssRules, pipeLine, settings) {
         }
     });
 
-    //如果layout不支持的类型，默认为linear
+    //如果layout不支持的类型，默认为matrix
     let layouts = ['matrix', 'linear'];
     if (layouts.indexOf(settings.layout) === -1) {
-        settings.layout = 'linear';
+        settings.layout = 'matrix';
     }
 
-    //设置宽高限制
-    // Image.setLimit(settings.width_limit, settings.height_limit);
-    let that = this;
     this.cssFile = cssFile;
     this.settings = settings;
     this.css = '';
     this.pipeLine = pipeLine;
-
-    let list_ = {};
-    let scales = {};
-
-    function getImage(imgUrl) {
-        return path.resolve(path.dirname(cssFile.path), imgUrl);
-    }
-
-    function insertToObject(o, key, elm) {
-        if (o[key]) {
-            o[key].push(elm);
-        } else {
-            o[key] = [elm];
-        }
-    }
-
-    util.map(cssRules, async function (k, bg) {
-        let image_ =await openImg(getImage(bg.getImageUrl()));
-        let direct = bg.getDirect();
-
-        bg.image_ = image_;
-
-        let scale_ = bg.size[0] / image_.width();
-
-        if (bg.size[0] !== -1 && scale_ !== settings.scale) {
-            scale_ = '' + scale_;
-            //不支持x, y
-            if (direct === 'z') {
-                if (scales[scale_]) {
-                    insertToObject(scales[scale_], direct, bg);
-                } else {
-                    scales[scale_] = {};
-                    insertToObject(scales[scale_], direct, bg);
-                }
-            }
-        } else {
-            insertToObject(list_, direct, bg);
-        }
-    });
-
-    this.fill(list_['x'], 'x');
-    this.fill(list_['y'], 'y');
-    this.zFill(list_['z'], settings.scale);
-
-    //background-size
-    util.map(scales, function (s, l) {
-        s = parseFloat(s);
-        that.zFill(l['z'], s);
-    });
+    this.cssRules = cssRules;
 }
 
 Generator.prototype = {
@@ -107,21 +79,17 @@ Generator.prototype = {
         }
         return false;
     },
-    after: function (image, arr_selector, direct, scale) {
+    after: async function (image, arr_selector, direct) {
         let ext = './sprite_' + direct + '.png';
-        let size = image.size();
-
-        if (scale) {
-            ext = '_' + scale + '/sprite' + ext;
-        }
+        let ext2x = './sprite_' + direct + '@2x.png';
 
         let image_file = this.cssFile.clone();
 
-        let imgRelativePath = path.relative(path.resolve(image_file.cwd, conf.config.src.css), image_file.path);
-        let imgPath = path.resolve(path.resolve(image_file.cwd, conf.config.src.img), imgRelativePath);
+        let imgRelativePath = path.relative(path.resolve(image_file.base, this.settings.cssPath), image_file.path);
+        let imgPath = path.resolve(path.resolve(image_file.base, this.settings.imgPath), imgRelativePath);
 
         image_file.path = path.resolve(imgPath.substr(0, imgPath.lastIndexOf('.')), ext);
-        image_file.contents = image.encode('png');
+        image_file.contents = await toBuffer(image, 'png');
 
         function unique(arr) {
             let map = {};
@@ -140,23 +108,17 @@ Generator.prototype = {
 
             for (let i = 0; i < n; i++) {
                 let step = i * MAX;
-                this.css += arr_selector.slice(step, step + MAX).join(',') +
-                    '{' +
-                    (scale ? 'background-size: ' + (size.width * scale) + 'px ' + (size.height * scale) + 'px;' : '') +
-                    'background-image: url(' + imageUrl + ')}';
+                this.css += arr_selector.slice(step, step + MAX).join(',') + '{' + 'background-image: url(' + imageUrl + ')}';
             }
         } else {
-            this.css += unique(arr_selector.join(',').split(',')).join(',') +
-                '{' +
-                (scale ? 'background-size: ' + (size.width * scale) + 'px ' + (size.height * scale) + 'px;' : '') +
-                'background-image: url(' + imageUrl + ')}';
+            this.css += unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + imageUrl + ')}';
         }
 
         this.pipeLine.push(image_file);
 
     },
     z_pack: new Packer(),
-    fill: function (list, direct) {
+    fill: async function (list, direct) {
         if (!list || list.length === 0) {
             return;
         }
@@ -172,7 +134,10 @@ Generator.prototype = {
                 parsed.push(list[i].getImageUrl());
                 k++;
                 let img = list[i].image_;
-                let size = img.size();
+                let size = {
+                    width: img.width(),
+                    height: img.height()
+                };
                 images[k] = {
                     url: list[i].getImageUrl(),
                     cls: [],
@@ -208,23 +173,27 @@ Generator.prototype = {
         total -= this.settings.margin;
         let height = direct === 'x' ? total : max;
         let width = direct === 'x' ? max : total;
-        let image = Image(width, height);
+        // let image = Image(width, height);
+        let image = await createImg(width, height);
 
         let x = 0,
             y = 0,
             cls = [];
         for (i = 0, len = images.length; i < len; i++) {
-            image.draw(images[i].image, x, y);
+            // image.draw(images[i].image, x, y);
+            image = await drawImg(image, images[i].image, x, y);
 
             if (direct === 'y' && images[i].height < max) {
                 //如果高度小于最大高度，则在Y轴平铺当前图
                 for (k = 0, count = max / images[i].height; k < count; k++) {
-                    image.draw(images[i].image, x, images[i].height * (k + 1));
+                    // image.draw(images[i].image, x, images[i].height * (k + 1));
+                    image = await drawImg(image, images[i].image, x, images[i].height * (k + 1));
                 }
             } else if (direct === 'x' && images[i].width < max) {
                 //如果宽度小于最大宽度，则在X轴方向平铺当前图
                 for (k = 0, count = max / images[i].width; k < count; k++) {
-                    image.draw(images[i].image, images[i].width * (k + 1), y);
+                    // image.draw(images[i].image, images[i].width * (k + 1), y);
+                    image = await drawImg(image, images[i].image, images[i].width * (k + 1), y);
                 }
             }
             for (k = 0, count = images[i].cls.length; k < count; k++) {
@@ -234,15 +203,15 @@ Generator.prototype = {
                 cls.push(images[i].cls[k].selector);
             }
             if (direct === 'x') {
-                y += images[i].height + this.settings.margin;
+                y += images[i].height() + this.settings.margin;
             } else {
-                x += images[i].width + this.settings.margin;
+                x += images[i].width() + this.settings.margin;
             }
         }
 
-        this.after(image, cls, direct, null);
+        await this.after(image, cls, direct, null);
     },
-    zFill: function (list, scale) {
+    zFill: async function (list) {
         let y_;
         if (!list || list.length === 0) {
             return;
@@ -272,7 +241,10 @@ Generator.prototype = {
             if (parsed[k0].indexOf(item.getImageUrl()) === -1) {
                 parsed[k0].push(item.getImageUrl());
                 let img = item.image_;
-                let size = img.size();
+                let size = {
+                    width: img.width(),
+                    height: img.height()
+                };
                 if (item.getType() === 'left') {
                     //计算最大宽度
                     if (size.width > max[k0]) {
@@ -333,8 +305,9 @@ Generator.prototype = {
         height = height - this.settings.margin;
         //left, zero
         //zero | left
-        let image = Image(max[left] + max[zero], height),
-            x = 0,
+
+        let image = await createImg(max[left] + max[zero], height);
+        let x = 0,
             y = 0,
             j = 0,
             cls = [],
@@ -346,14 +319,10 @@ Generator.prototype = {
                 x = current.fit.x;
                 y = current.fit.y;
 
-                image.draw(Image(current.image), x, y);
+                image = await drawImg(image, current.image, x, y);
                 for (j = 0, count = current.cls.length; j < count; j++) {
                     let x_ = current.cls[j].position[0] + -x;
                     let y_ = current.cls[j].position[1] + -y;
-                    if (scale) {
-                        x_ = x_ * scale;
-                        y_ = y_ * scale;
-                    }
 
                     this.css += current.cls[j].selector + '{background-position:' +
                         x_ + 'px ' +
@@ -368,21 +337,15 @@ Generator.prototype = {
             for (i = 0, length = images[left].length; i < length; i++) {
                 current = images[left][i];
                 x = max[zero] + max[left] - current.w;
-                image.draw(Image(current.image), x, y);
+                image = await drawImg(image, current.image, x, y);
                 for (j = 0, count = current.cls.length; j < count; j++) {
                     let x_;
                     y_ = (current.cls[j].position[1] + -y) + 'px';
-                    if (scale) {
-                        y_ = ((current.cls[j].position[1] + -y) * scale) + 'px';
-                    }
 
                     if (current.cls[j].position[0] === 'right') {
                         x_ = 'right ';
                     } else {
                         x_ = -x + current.cls[j].position[0];
-                        if (scale) {
-                            x_ = x_ * scale;
-                        }
                         x_ = x_ + 'px ';
                     }
 
@@ -394,11 +357,47 @@ Generator.prototype = {
                 y += current.h;
             }
         }
-        this.after(image, cls, 'z', scale);
+        await this.after(image, cls, 'z');
+    },
+    genCss: async function () {
+        let that = this;
+
+        function getImage(imgUrl) {
+            return path.resolve(path.dirname(that.cssFile.path), imgUrl);
+        }
+
+        function insertToObject(o, key, elm) {
+            if (o[key]) {
+                o[key].push(elm);
+            } else {
+                o[key] = [elm];
+            }
+        }
+
+        let list_ = {};
+
+        for (let i = 0; i < that.cssRules.length; i++) {
+            let bg = that.cssRules[i];
+            let image_ = await openImg(getImage(bg.getImageUrl()));
+            let direct = bg.getDirect();
+            bg.image_ = image_;
+            insertToObject(list_, direct, bg);
+        }
+
+        await that.fill(list_['x'], 'x');
+        await that.fill(list_['y'], 'y');
+        await that.zFill(list_['z']);
+
+        //background-size
+        // util.map(this.scales, async function (s, l) {
+        //     s = parseFloat(s);
+        //     await that.zFill(l['z'], s);
+        // });
     }
 };
 
-module.exports = function (cssFile, cssRules, pipeLine, settings) {
+module.exports = async function (cssFile, cssRules, pipeLine, settings) {
     let gen = new Generator(cssFile, cssRules, pipeLine, settings);
+    await gen.genCss();
     return gen.css;
 };
