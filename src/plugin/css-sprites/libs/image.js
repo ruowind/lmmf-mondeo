@@ -1,5 +1,5 @@
 'use strict';
-let Image = require('images');
+// let Image = require('images');
 let path = require('path'),
     util = require('./util'),
     // conf = require('../../../lib/config'),
