@@ -5,7 +5,6 @@ const path = require('path');
 const fs = require('fs');
 const _ = require('lodash');
 const electron = require('electron');
-const remote = electron.remote;
 const shell = electron.shell;
 const Common = require('./common');
 const task = require('./task');
@@ -267,6 +266,7 @@ function initWorkConfig() {
         livereload: true,
         compress: false,
         reversion: true,
+        support2x: false,
         jsPath: 'js',
         cssPath: 'css',
         imgPath: 'img',
@@ -323,7 +323,6 @@ function openProject(projectPath) {
 
         //插入打开的项目
         insertOpenProject(projectPath);
-
 
         let curConfigPath = path.join(projectPath, Common.CONFIGNAME);
 

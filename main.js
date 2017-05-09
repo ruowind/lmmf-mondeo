@@ -3,7 +3,7 @@ const electron = require('electron')
 const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
-
+// Module to dontrol application menus.
 const Menu = electron.Menu;
 
 const path = require('path')
@@ -14,13 +14,15 @@ const url = require('url')
 let mainWindow
 
 function createWindow() {
+  // remove windows menu.
   Menu.setApplicationMenu(null);
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 376,
     minHeight: 572,
     resizable: false,
-    title: '驴妈妈前端工作流'
+    title: '驴妈妈前端工作流',
+    frame: true
   })
 
   // and load the index.html of the app.

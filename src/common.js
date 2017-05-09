@@ -3,19 +3,19 @@
 const path = require('path');
 const fs = require('fs');
 
-class Common {}
+let Common= {}
 
-Common.NAME = 'mondeo';
+Common.NAME = 'lvu';
 Common.DIST_PATH = 'dist';
 Common.ROOT = path.join(__dirname, '../');
 Common.WORKSPACE = `${Common.NAME}_workspace`;
-Common.CONFIGNAME = 'mondeo.json';
+Common.CONFIGNAME = 'lvu_config.json';
 Common.CONFIGPATH = path.join(__dirname, '../', Common.CONFIGNAME);
 Common.PLATFORM = process.platform;
 Common.DEFAULT_PATH = Common.PLATFORM === 'win32' ? 'desktop' : 'home';
 Common.TEMPLAGE_PROJECT = path.resolve(path.join(__dirname, '../templates/project.zip'));
 Common.TEMPLAGE_EXAMPLE = path.resolve(path.join(__dirname, '../templates/example.zip'));
-Common.EXAMPLE_NAME = 'mondeo-example';
+Common.EXAMPLE_NAME = 'lvu-example';
 Common.CHECKURL = 'https://raw.githubusercontent.com/weixin/WeFlow/master/package.json';
 Common.DOWNLOADURL = 'https://github.com/weixin/WeFlow/releases';
 

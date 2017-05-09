@@ -56,21 +56,20 @@ function main(config) {
                     } else {
                         // console.log('build-css-->: file: ' + imgUrl + ' not exits! so has skiped');
                     }
+                    let cdn = ['http://pic.lvmama.com'];
+                    let IMG_DOMAIN_REG = new RegExp('.*?(' + config.imgPath + '/)');
+                    imgUrl = imgUrl.replace(IMG_DOMAIN_REG, function () {
+                        let index = Math.floor((Math.random() * cdn.length));
+                        return cdn[index] + '/img/' + config.projectPath;
+                    });
                 }
-
-                let cdn = ['http://pic.lvmama.com'];
-                let IMG_DOMAIN_REG = new RegExp('.*?(' + config.imgPath + '/)');
-                imgUrl = imgUrl.replace(IMG_DOMAIN_REG, function () {
-                    let index = Math.floor((Math.random() * cdn.length));
-                    return cdn[index] + '/img/' + config.projectPath + '/';
-                });
 
                 return 'url(' + imgUrl + ')';
             });
 
             // remove sourcemap
-            let index = fileString.indexOf('/*# sourceMappingURL=data:application/json;charset=utf8;base64,');
-            fileString = fileString.substr(0, index - 1);
+            // let index = fileString.indexOf('/*# sourceMappingURL=data:application/json;charset=utf8;base64,');
+            // fileString = fileString.substr(0, index - 1);
 
             cssFile.contents = new Buffer(fileString);
             that.push(cssFile);

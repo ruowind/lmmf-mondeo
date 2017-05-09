@@ -81,7 +81,7 @@ Generator.prototype = {
     },
     after: async function (image, arr_selector, direct) {
         let ext = './sprite_' + direct + '.png';
-        let ext2x = './sprite_' + direct + '@2x.png';
+        // let ext2x = './sprite_' + direct + '@2x.png';
 
         let image_file = this.cssFile.clone();
 
@@ -99,6 +99,9 @@ Generator.prototype = {
         }
 
         let imageUrl = path.relative(path.dirname(this.cssFile.path), image_file.path).replace(/\\/g, '/');
+        // 2ximg path
+        let dotIndex = imageUrl.lastIndexOf('.');
+        let image2xUrl = imageUrl.substr(0, dotIndex) + '@2x' + imageUrl.substr(dotIndex);
 
         if (this.settings.ie_bug_fix) {
             let MAX = this.settings.max_selectores || 30; //max 36
@@ -108,10 +111,15 @@ Generator.prototype = {
 
             for (let i = 0; i < n; i++) {
                 let step = i * MAX;
-                this.css += arr_selector.slice(step, step + MAX).join(',') + '{' + 'background-image: url(' + imageUrl + ')}';
+                this.css += arr_selector.slice(step, step + MAX).join(',') + '{' + 'background-image: url(' + imageUrl + ');}';
             }
         } else {
-            this.css += unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + imageUrl + ')}';
+            this.css += unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + imageUrl + ');}';
+        }
+
+        // 2ximg css
+        if (this.settings.support2x) {
+            this.css += '@media only screen and (-webkit-min-device-pixel-ratio: 2),only screen and (min--moz-device-pixel-ratio: 2),only screen and (-webkit-min-device-pixel-ratio: 2.5),only screen and (min-resolution: 240dpi) {' + unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + image2xUrl + ');}' + '}';
         }
 
         this.pipeLine.push(image_file);
@@ -173,26 +181,22 @@ Generator.prototype = {
         total -= this.settings.margin;
         let height = direct === 'x' ? total : max;
         let width = direct === 'x' ? max : total;
-        // let image = Image(width, height);
         let image = await createImg(width, height);
 
         let x = 0,
             y = 0,
             cls = [];
         for (i = 0, len = images.length; i < len; i++) {
-            // image.draw(images[i].image, x, y);
             image = await drawImg(image, images[i].image, x, y);
 
             if (direct === 'y' && images[i].height < max) {
                 //如果高度小于最大高度，则在Y轴平铺当前图
                 for (k = 0, count = max / images[i].height; k < count; k++) {
-                    // image.draw(images[i].image, x, images[i].height * (k + 1));
                     image = await drawImg(image, images[i].image, x, images[i].height * (k + 1));
                 }
             } else if (direct === 'x' && images[i].width < max) {
                 //如果宽度小于最大宽度，则在X轴方向平铺当前图
                 for (k = 0, count = max / images[i].width; k < count; k++) {
-                    // image.draw(images[i].image, images[i].width * (k + 1), y);
                     image = await drawImg(image, images[i].image, images[i].width * (k + 1), y);
                 }
             }
@@ -326,7 +330,7 @@ Generator.prototype = {
 
                     this.css += current.cls[j].selector + '{background-position:' +
                         x_ + 'px ' +
-                        y_ + 'px}';
+                        y_ + 'px;}';
                     cls.push(current.cls[j].selector);
                 }
             }
@@ -351,7 +355,7 @@ Generator.prototype = {
 
                     this.css += current.cls[j].selector + '{background-position:' +
                         x_ +
-                        y_ + '}';
+                        y_ + ';}';
                     cls.push(current.cls[j].selector);
                 }
                 y += current.h;
@@ -378,21 +382,22 @@ Generator.prototype = {
 
         for (let i = 0; i < that.cssRules.length; i++) {
             let bg = that.cssRules[i];
-            let image_ = await openImg(getImage(bg.getImageUrl()));
             let direct = bg.getDirect();
+
+            let image_ = await openImg(getImage(bg.getImageUrl()));
             bg.image_ = image_;
+
+            if (this.settings.support2x) {
+                let image2x_ = await openImg(getImage(bg.get2xImageUrl()));
+                bg.image2x_ = image2x_;
+            }
+
             insertToObject(list_, direct, bg);
         }
 
         await that.fill(list_['x'], 'x');
         await that.fill(list_['y'], 'y');
         await that.zFill(list_['z']);
-
-        //background-size
-        // util.map(this.scales, async function (s, l) {
-        //     s = parseFloat(s);
-        //     await that.zFill(l['z'], s);
-        // });
     }
 };
 

@@ -30,8 +30,6 @@ function Rules(id, css) {
     self._type = null;
     self._have_position = false;
 
-    //获取spriter的配置
-    // self._settings = fis.config.get('settings.spriter.csssprites');
     /**
      * get position
      * @param res

@@ -28,13 +28,14 @@ exports.dist = (projectConfig) => {
                 margin: 1,
                 layout: 'matrix',
                 cssPath: projectConfig.cssPath,
-                imgPath: projectConfig.imgPath
+                imgPath: projectConfig.imgPath,
+                support2x: projectConfig.support2x
             }))
-            // .pipe(cssInline())
-            // .pipe(fileDep(htmlPath))
-            // .pipe(cssBuild(projectConfig))
-            // .pipe(buildHtml(projectConfig))
-            // .pipe(organizeFiles(projectConfig))
+            .pipe(cssInline())
+            .pipe(fileDep(htmlPath))
+            .pipe(cssBuild(projectConfig))
+            .pipe(buildHtml(projectConfig))
+            .pipe(organizeFiles(projectConfig))
             .pipe(gulp.dest(path.join(projectConfig.path, Common.DIST_PATH)))
             .on('end', () => {
                 resolve();

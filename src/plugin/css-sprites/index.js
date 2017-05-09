@@ -6,6 +6,7 @@ let through = require('through2'),
     imgGen = require('./libs/image'),
     path = require('path'),
     cssParser = require('./libs/cssParser'),
+    cssbeautify = require('cssbeautify'),
     PLUGIN_NAME = 'css-sprites';
 
 function main(config) {
@@ -26,7 +27,8 @@ function main(config) {
             let res = cssParser(fileString);
 
             let spritesCss = await imgGen(file, res.map, this, config);
-            file.contents = new Buffer(res.content + spritesCss);
+            let allCss = cssbeautify(res.content + spritesCss);
+            file.contents = new Buffer(allCss);
         }
         this.push(file);
         cb();

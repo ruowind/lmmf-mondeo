@@ -12,12 +12,12 @@
   <div class="wraper">
     <div class="welcome hide" id="js-welcome">
       <div class="logo"></div>
-      <div class="title">WeFlow</div>
-      <div class="subtitle">子在川上曰：逝者如斯夫，不舍昼夜。</div>
+      <div class="title">LVU</div>
+      <div class="subtitle">骐骥一跃，不能十步；驽马十驾，功在不舍。</div>
       <div class="welcome-example" id="js-example">导入示例项目</div>
       <div class="tips">
         <div class="icon-tips"></div>
-        <div class="tips__content">添加一个空项目</div>
+        <div class="tips__content">添加一个项目</div>
       </div>
     </div>
     <div class="projects">
@@ -53,10 +53,9 @@
       <span class="bottom-bar__status" id="js-logs-status"></span>
     </div>
   </div>
-
   <div class="setting hide" id="js-setting">
     <a href="javascript:;" id="js-setting-close" class="icon icon-close"></a>
-    <a href="https://github.com/ruowind/weflow" id="js-help" class="icon icon-help"></a>
+    <!--<a href="https://github.com/ruowind/weflow" id="js-help" class="icon icon-help"></a>-->
     <h2><span id="setting-project-name">全局</span>设置</h2>
     <div class="setting__section" id="js-workspace">
       <div class="setting__hd">SVN路径</div>
@@ -80,12 +79,16 @@
           <label for="livereload">开启 LiveReload 浏览器自动刷新</label>
         </div>
         <div class="ui-checkbox">
+          <input type="checkbox" name="reversion" id="reversion">
+          <label for="reversion">开启 文件版本 (MD5) 去缓存解决方案</label>
+        </div>
+        <div class="ui-checkbox">
           <input type="checkbox" name="compress" id="compress">
           <label for="compress">开启 js/css 压缩</label>
         </div>
         <div class="ui-checkbox">
-          <input type="checkbox" name="reversion" id="reversion">
-          <label for="reversion">开启 文件版本 (MD5) 去缓存解决方案</label>
+          <input type="checkbox" name="support2x" id="support2x">
+          <label for="support2x">开启 2x图合并</label>
         </div>
       </div>
     </div>
@@ -120,26 +123,6 @@
       </div>
     </div>
   </div>
-
-  <div class="about hide" id="js-about">
-    <div class="logo"></div>
-    <div class="title">WeFlow</div>
-    <div class="version">Version 1.0.0</div>
-    <div class="desc">一个基于 <a href="https://github.com/weixin/tmt-workflow">tmt-workflow</a> 的前端工作流程序</div>
-
-    <div class="about__buttom">
-      <div class="about__buttom-info">本 App 所有代码和设计稿均已开源</div>
-      <div class="about__buttom-list">
-        <a href="javascript:;" class="about__buttom-list-item">GitHub</a>
-        <a href="javascript:;" class="about__buttom-list-item">Dribbble</a>
-        <a href="javascript:;" class="about__buttom-list-item">官 网</a>
-      </div>
-    </div>
-
-    <a href="javascript:;" class="icon icon-close"></a>
-
-  </div>
-
 </body>
 
 <script>
