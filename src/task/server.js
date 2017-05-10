@@ -59,6 +59,8 @@ exports.startServer = (projectConfig) => {
     let stalker = watchr.open(projectConfig.path, listener, next);
     stalker.setConfig({
         catchupDelay: 10,
+        ignoreHiddenFiles: true,
+        ignoreCommonPatterns: true
     });
 
     return bs;
