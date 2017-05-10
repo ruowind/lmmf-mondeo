@@ -25,12 +25,15 @@ let $log = $('#js-log');
 let $logContent = $log.find('.logs__inner');
 let $logStatus = $('#js-logs-status');
 let $curProject = null;
-let workConfig = {};
+// let workConfig = {};
 
 let bsObj = {};
 let FinderTitle = Common.PLATFORM === 'win32' ? '在 文件夹 中查看' : '在 Finder 中查看';
 
 init();
+
+// let app = require('electron').remote.app;
+// console.log(app.getPath('appData'));
 
 // 打开项目按钮
 $openProject.on('change', function () {
@@ -279,7 +282,7 @@ function initWorkConfig() {
 //初始化数据
 function initData() {
     let storage = Common.getStorage();
-    let title = '';
+    // let title = '';
 
     if (!_.isEmpty(storage['projects'])) {
         let html = '';

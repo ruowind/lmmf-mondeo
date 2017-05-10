@@ -3,21 +3,21 @@
 const path = require('path');
 const fs = require('fs');
 
-let Common= {}
+let Common = {};
 
-Common.NAME = 'lvu';
+Common.NAME = 'lv-bmw';
 Common.DIST_PATH = 'dist';
 Common.ROOT = path.join(__dirname, '../');
 Common.WORKSPACE = `${Common.NAME}_workspace`;
-Common.CONFIGNAME = 'lvu_config.json';
+Common.CONFIGNAME = 'lv-bmw-conf.json';
 Common.CONFIGPATH = path.join(__dirname, '../', Common.CONFIGNAME);
 Common.PLATFORM = process.platform;
 Common.DEFAULT_PATH = Common.PLATFORM === 'win32' ? 'desktop' : 'home';
 Common.TEMPLAGE_PROJECT = path.resolve(path.join(__dirname, '../templates/project.zip'));
 Common.TEMPLAGE_EXAMPLE = path.resolve(path.join(__dirname, '../templates/example.zip'));
 Common.EXAMPLE_NAME = 'lvu-example';
-Common.CHECKURL = 'https://raw.githubusercontent.com/weixin/WeFlow/master/package.json';
-Common.DOWNLOADURL = 'https://github.com/weixin/WeFlow/releases';
+// Common.CHECKURL = 'https://raw.githubusercontent.com/weixin/WeFlow/master/package.json';
+// Common.DOWNLOADURL = 'https://github.com/weixin/WeFlow/releases';
 
 Common.requireUncached = function (module) {
     delete require.cache[require.resolve(module)];
