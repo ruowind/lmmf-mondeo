@@ -3,7 +3,8 @@
 let path = require('path'),
     util = require('./util'),
     Packer = require('./pack'),
-    lwip = require('node-lwip');
+    lwip = require('node-lwip'),
+    _ = require('lodash');
 
 function openImg(filePath) {
     return new Promise((resolve) => {
@@ -79,28 +80,20 @@ Generator.prototype = {
         }
         return false;
     },
-    after: async function (images, arr_selector, direct) {
-        let image = images.image;
-        let image2x = images.image2x;
+    after: async function (image, arr_selector, direct, is2x) {
+        let width = image.width() / 2;
+        let height = image.height() / 2;
+        let backgroundSize = is2x ? `background-size: ${width}px ${height}px;` : '';
 
-        let width = image.width();
-        let height = image.height();
-        let backgroundSize = `background-size: ${width}px ${height}px;`;
-
-        let ext = './sprite_' + direct + '.png';
-        let ext2x = './sprite_' + direct + '@2x.png';
+        let ext = './sprite_' + direct + (is2x ? '@2x' : '') + '.png';
 
         let image_file = this.cssFile.clone();
-        let image2x_file = this.cssFile.clone();
 
         let imgRelativePath = path.relative(path.resolve(image_file.base, this.settings.cssPath), image_file.path);
         let imgPath = path.resolve(path.resolve(image_file.base, this.settings.imgPath), imgRelativePath);
 
         image_file.path = path.resolve(imgPath.substr(0, imgPath.lastIndexOf('.')), ext);
         image_file.contents = await toBuffer(image, 'png');
-
-        image2x_file.path = path.resolve(imgPath.substr(0, imgPath.lastIndexOf('.')), ext2x);
-        image2x_file.contents = await toBuffer(image2x, 'png');
 
         function unique(arr) {
             let map = {};
@@ -110,9 +103,10 @@ Generator.prototype = {
         }
 
         let imageUrl = path.relative(path.dirname(this.cssFile.path), image_file.path).replace(/\\/g, '/');
-        // 2ximg path
-        let dotIndex = imageUrl.lastIndexOf('.');
-        let image2xUrl = imageUrl.substr(0, dotIndex) + '@2x' + imageUrl.substr(dotIndex);
+
+        if (is2x) {
+            this.css += '@media only screen and (-webkit-min-device-pixel-ratio: 2),only screen and (min--moz-device-pixel-ratio: 2),only screen and (-webkit-min-device-pixel-ratio: 2.5),only screen and (min-resolution: 240dpi) {';
+        }
 
         if (this.settings.ie_bug_fix) {
             let MAX = this.settings.max_selectores || 30; //max 36
@@ -122,19 +116,18 @@ Generator.prototype = {
 
             for (let i = 0; i < n; i++) {
                 let step = i * MAX;
-                this.css += arr_selector.slice(step, step + MAX).join(',') + '{' + 'background-image: url(' + imageUrl + ');}';
+                this.css += arr_selector.slice(step, step + MAX).join(',') + '{' + 'background-image: url(' + imageUrl + ');' + (is2x ? backgroundSize : '') + '}';
             }
         } else {
-            this.css += unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + imageUrl + ');}';
+            this.css += unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + imageUrl + ');' + (is2x ? backgroundSize : '') + '}';
         }
 
-        // 2ximg css
-        if (this.settings.support2x) {
-            this.css += '@media only screen and (-webkit-min-device-pixel-ratio: 2),only screen and (min--moz-device-pixel-ratio: 2),only screen and (-webkit-min-device-pixel-ratio: 2.5),only screen and (min-resolution: 240dpi) {' + unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + image2xUrl + ');' + backgroundSize + '}' + '}';
+        if (is2x) {
+            this.css += '}';
         }
+
 
         this.pipeLine.push(image_file);
-        this.pipeLine.push(image2x_file);
     },
     z_pack: new Packer(),
     // fill: async function (list, direct) {
@@ -226,8 +219,8 @@ Generator.prototype = {
 
     //     await this.after(image, cls, direct, null);
     // },
-    zFill: async function (list) {
-        let y_;
+    zFill: async function (list, is2x) {
+        // let y_;
         if (!list || list.length === 0) {
             return;
         }
@@ -241,8 +234,17 @@ Generator.prototype = {
             ],
             max = [0, 0],
             total = [0, 0];
+
+
+        if (is2x) {
+            list = _.filter(list, function (o) {
+                return o.image2x_;
+            });
+            this.settings.margin = this.settings.margin * 2;
+        }
         for (i = 0, k = [-1, -1], length = list.length; i < length; i++) {
             let item = list[i];
+
             // 如果默认是linear，type全都设为left
             if (this.settings.layout === 'linear') {
                 item.setType('left');
@@ -255,7 +257,7 @@ Generator.prototype = {
             }
             if (parsed[k0].indexOf(item.getImageUrl()) === -1) {
                 parsed[k0].push(item.getImageUrl());
-                let img = item.image_;
+                let img = is2x ? item.image2x_ : item.image_;
                 let size = {
                     width: img.width(),
                     height: img.height()
@@ -272,7 +274,6 @@ Generator.prototype = {
                     url: item.getImageUrl(),
                     cls: [],
                     image: img,
-                    image2x: item.image2x_,
                     w: size.width + this.settings.margin,
                     h: size.height + this.settings.margin
                 };
@@ -301,11 +302,25 @@ Generator.prototype = {
         }
         if (images[zero]) {
             let zero_root;
-            //高度从大到小排序
+
+            //这边先排下序
+            for (let i = 0; i < images[zero].length; i++) {
+                images[zero][i]['index'] = i;
+            }
+
+            //高度从大到小排序  这边会改变css的顺序
             images[zero].sort(function (a, b) {
                 return -(a.h - b.h);
             });
+
+
             this.z_pack.fit(images[zero]);
+
+            //pack后立马还原顺序
+            images[zero].sort(function (a, b) {
+                return a.index > b.index;
+            });
+
             zero_root = this.z_pack.getRoot();
             max[zero] = zero_root.w;
             total[zero] = zero_root.h;
@@ -324,7 +339,6 @@ Generator.prototype = {
 
         // 创建一张大图
         let image = await createImg(max[left] + max[zero], height);
-        let image2x = await createImg((max[left] + max[zero]) * 2, height * 2);
 
         let x = 0,
             y = 0,
@@ -333,59 +347,61 @@ Generator.prototype = {
             count = 0,
             current;
         if (images[zero]) {
+            if (is2x) {
+                this.css += '@media only screen and (-webkit-min-device-pixel-ratio: 2),only screen and (min--moz-device-pixel-ratio: 2),only screen and (-webkit-min-device-pixel-ratio: 2.5),only screen and (min-resolution: 240dpi) {';
+            }
+
             for (i = 0, length = images[zero].length; i < length; i++) {
                 current = images[zero][i];
                 x = current.fit.x;
                 y = current.fit.y;
 
                 image = await drawImg(image, current.image, x, y);
-                if (this.settings.support2x && current.image2x) {
-                    image2x = await drawImg(image2x, current.image2x, x * 2, y * 2);
-                }
 
                 for (j = 0, count = current.cls.length; j < count; j++) {
                     let x_ = current.cls[j].position[0] + -x;
                     let y_ = current.cls[j].position[1] + -y;
 
                     this.css += current.cls[j].selector + '{background-position:' +
-                        x_ + 'px ' +
-                        y_ + 'px;}';
+                        (is2x ? x_ / 2 : x_) + 'px ' +
+                        (is2x ? y_ / 2 : y_) + 'px;}';
 
                     cls.push(current.cls[j].selector);
                 }
             }
-        }
 
-        if (images[left]) {
-            y = 0;
-            for (i = 0, length = images[left].length; i < length; i++) {
-                current = images[left][i];
-                x = max[zero] + max[left] - current.w;
-                image = await drawImg(image, current.image, x, y);
-                for (j = 0, count = current.cls.length; j < count; j++) {
-                    let x_;
-                    y_ = (current.cls[j].position[1] + -y) + 'px';
-
-                    if (current.cls[j].position[0] === 'right') {
-                        x_ = 'right ';
-                    } else {
-                        x_ = -x + current.cls[j].position[0];
-                        x_ = x_ + 'px ';
-                    }
-
-                    this.css += current.cls[j].selector + '{background-position:' +
-                        x_ +
-                        y_ + ';}';
-                    cls.push(current.cls[j].selector);
-                }
-                y += current.h;
+            if (is2x) {
+                this.css += '}';
             }
         }
 
-        await this.after({
-            image,
-            image2x
-        }, cls, 'z');
+        // if (images[left]) {
+        //     y = 0;
+        //     for (i = 0, length = images[left].length; i < length; i++) {
+        //         current = images[left][i];
+        //         x = max[zero] + max[left] - current.w;
+        //         image = await drawImg(image, current.image, x, y);
+        //         for (j = 0, count = current.cls.length; j < count; j++) {
+        //             let x_;
+        //             y_ = (current.cls[j].position[1] + -y) + 'px';
+
+        //             if (current.cls[j].position[0] === 'right') {
+        //                 x_ = 'right ';
+        //             } else {
+        //                 x_ = -x + current.cls[j].position[0];
+        //                 x_ = x_ + 'px ';
+        //             }
+
+        //             this.css += current.cls[j].selector + '{background-position:' +
+        //                 x_ +
+        //                 y_ + ';}';
+        //             cls.push(current.cls[j].selector);
+        //         }
+        //         y += current.h;
+        //     }
+        // }
+
+        await this.after(image, cls, 'z', is2x);
     },
     genCss: async function () {
         let that = this;
@@ -422,6 +438,9 @@ Generator.prototype = {
         // await that.fill(list_['x'], 'x');
         // await that.fill(list_['y'], 'y');
         await that.zFill(list_['z']);
+        if (this.settings.support2x) {
+            await that.zFill(list_['z'], true);
+        }
     }
 };
 

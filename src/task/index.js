@@ -46,7 +46,9 @@ exports.dist = (projectConfig) => {
 exports.cleanDist = (projectConfig) => {
     return new Promise((resolve) => {
         gulp.src(path.join(projectConfig.path, '/dist'))
-            .pipe(cleanFile())
+            .pipe(cleanFile({
+                force: true
+            }))
             .pipe(gulp.dest(path.join(projectConfig.path, '/dist')))
             .on('end', () => {
                 resolve();
