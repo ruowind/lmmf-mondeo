@@ -79,17 +79,28 @@ Generator.prototype = {
         }
         return false;
     },
-    after: async function (image, arr_selector, direct) {
+    after: async function (images, arr_selector, direct) {
+        let image = images.image;
+        let image2x = images.image2x;
+
+        let width = image.width();
+        let height = image.height();
+        let backgroundSize = `background-size: ${width}px ${height}px;`;
+
         let ext = './sprite_' + direct + '.png';
-        // let ext2x = './sprite_' + direct + '@2x.png';
+        let ext2x = './sprite_' + direct + '@2x.png';
 
         let image_file = this.cssFile.clone();
+        let image2x_file = this.cssFile.clone();
 
         let imgRelativePath = path.relative(path.resolve(image_file.base, this.settings.cssPath), image_file.path);
         let imgPath = path.resolve(path.resolve(image_file.base, this.settings.imgPath), imgRelativePath);
 
         image_file.path = path.resolve(imgPath.substr(0, imgPath.lastIndexOf('.')), ext);
         image_file.contents = await toBuffer(image, 'png');
+
+        image2x_file.path = path.resolve(imgPath.substr(0, imgPath.lastIndexOf('.')), ext2x);
+        image2x_file.contents = await toBuffer(image2x, 'png');
 
         function unique(arr) {
             let map = {};
@@ -119,102 +130,102 @@ Generator.prototype = {
 
         // 2ximg css
         if (this.settings.support2x) {
-            this.css += '@media only screen and (-webkit-min-device-pixel-ratio: 2),only screen and (min--moz-device-pixel-ratio: 2),only screen and (-webkit-min-device-pixel-ratio: 2.5),only screen and (min-resolution: 240dpi) {' + unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + image2xUrl + ');}' + '}';
+            this.css += '@media only screen and (-webkit-min-device-pixel-ratio: 2),only screen and (min--moz-device-pixel-ratio: 2),only screen and (-webkit-min-device-pixel-ratio: 2.5),only screen and (min-resolution: 240dpi) {' + unique(arr_selector.join(',').split(',')).join(',') + '{' + 'background-image: url(' + image2xUrl + ');' + backgroundSize + '}' + '}';
         }
 
         this.pipeLine.push(image_file);
-
+        this.pipeLine.push(image2x_file);
     },
     z_pack: new Packer(),
-    fill: async function (list, direct) {
-        if (!list || list.length === 0) {
-            return;
-        }
-        let max = 0;
-        let images = [];
-        //宽度或者高的和
-        let total = 0;
-        let parsed = [];
-        let i, k, len, count, op_max;
+    // fill: async function (list, direct) {
+    //     if (!list || list.length === 0) {
+    //         return;
+    //     }
+    //     let max = 0;
+    //     let images = [];
+    //     //宽度或者高的和
+    //     let total = 0;
+    //     let parsed = [];
+    //     let i, k, len, count, op_max;
 
-        for (i = 0, k = -1, len = list.length; i < len; i++) {
-            if (parsed.indexOf(list[i].getImageUrl()) === -1) {
-                parsed.push(list[i].getImageUrl());
-                k++;
-                let img = list[i].image_;
-                let size = {
-                    width: img.width(),
-                    height: img.height()
-                };
-                images[k] = {
-                    url: list[i].getImageUrl(),
-                    cls: [],
-                    image: img,
-                    width: size.width,
-                    height: size.height
-                };
-                images[k].cls.push({
-                    selector: list[i].getId(),
-                    position: list[i].getPosition()
-                });
-                //如果是repeat-x的，记录最大宽度；如果是repeat-y的，记录最大高度
-                op_max = (direct === 'x') ? size.width : size.height;
-                if (op_max > max) {
-                    max = op_max;
-                }
-                //如果是repeat-x的，计算高度和；如果是repeat-y的，计算宽度和
-                total += (direct === 'x' ? size.height : size.width) + this.settings.margin;
-            } else {
-                let key = this._imageExist(images, list[i].getImageUrl());
-                images[key].cls.push({
-                    selector: list[i].getId(),
-                    position: list[i].getPosition()
-                });
-            }
-        }
+    //     for (i = 0, k = -1, len = list.length; i < len; i++) {
+    //         if (parsed.indexOf(list[i].getImageUrl()) === -1) {
+    //             parsed.push(list[i].getImageUrl());
+    //             k++;
+    //             let img = list[i].image_;
+    //             let size = {
+    //                 width: img.width(),
+    //                 height: img.height()
+    //             };
+    //             images[k] = {
+    //                 url: list[i].getImageUrl(),
+    //                 cls: [],
+    //                 image: img,
+    //                 width: size.width,
+    //                 height: size.height
+    //             };
+    //             images[k].cls.push({
+    //                 selector: list[i].getId(),
+    //                 position: list[i].getPosition()
+    //             });
+    //             //如果是repeat-x的，记录最大宽度；如果是repeat-y的，记录最大高度
+    //             op_max = (direct === 'x') ? size.width : size.height;
+    //             if (op_max > max) {
+    //                 max = op_max;
+    //             }
+    //             //如果是repeat-x的，计算高度和；如果是repeat-y的，计算宽度和
+    //             total += (direct === 'x' ? size.height : size.width) + this.settings.margin;
+    //         } else {
+    //             let key = this._imageExist(images, list[i].getImageUrl());
+    //             images[key].cls.push({
+    //                 selector: list[i].getId(),
+    //                 position: list[i].getPosition()
+    //             });
+    //         }
+    //     }
 
-        if (images.length === 0) {
-            return;
-        }
+    //     if (images.length === 0) {
+    //         return;
+    //     }
 
-        //减掉多加的一次margin
-        total -= this.settings.margin;
-        let height = direct === 'x' ? total : max;
-        let width = direct === 'x' ? max : total;
-        let image = await createImg(width, height);
+    //     //减掉多加的一次margin
+    //     total -= this.settings.margin;
+    //     let height = direct === 'x' ? total : max;
+    //     let width = direct === 'x' ? max : total;
+    //     let image = await createImg(width, height);
 
-        let x = 0,
-            y = 0,
-            cls = [];
-        for (i = 0, len = images.length; i < len; i++) {
-            image = await drawImg(image, images[i].image, x, y);
+    //     let x = 0,
+    //         y = 0,
+    //         cls = [];
+    //     for (i = 0, len = images.length; i < len; i++) {
+    //         image = await drawImg(image, images[i].image, x, y);
 
-            if (direct === 'y' && images[i].height < max) {
-                //如果高度小于最大高度，则在Y轴平铺当前图
-                for (k = 0, count = max / images[i].height; k < count; k++) {
-                    image = await drawImg(image, images[i].image, x, images[i].height * (k + 1));
-                }
-            } else if (direct === 'x' && images[i].width < max) {
-                //如果宽度小于最大宽度，则在X轴方向平铺当前图
-                for (k = 0, count = max / images[i].width; k < count; k++) {
-                    image = await drawImg(image, images[i].image, images[i].width * (k + 1), y);
-                }
-            }
-            for (k = 0, count = images[i].cls.length; k < count; k++) {
-                this.css += images[i].cls[k].selector + '{background-position:' +
-                    (images[i].cls[k].position[0] + -x) + 'px ' +
-                    (images[i].cls[k].position[1] + -y) + 'px}';
-                cls.push(images[i].cls[k].selector);
-            }
-            if (direct === 'x') {
-                y += images[i].height() + this.settings.margin;
-            } else {
-                x += images[i].width() + this.settings.margin;
-            }
-        }
+    //         if (direct === 'y' && images[i].height < max) {
+    //             //如果高度小于最大高度，则在Y轴平铺当前图
+    //             for (k = 0, count = max / images[i].height; k < count; k++) {
+    //                 image = await drawImg(image, images[i].image, x, images[i].height * (k + 1));
+    //             }
+    //         } else if (direct === 'x' && images[i].width < max) {
+    //             //如果宽度小于最大宽度，则在X轴方向平铺当前图
+    //             for (k = 0, count = max / images[i].width; k < count; k++) {
+    //                 image = await drawImg(image, images[i].image, images[i].width * (k + 1), y);
+    //             }
+    //         }
+    //         for (k = 0, count = images[i].cls.length; k < count; k++) {
+    //             this.css += images[i].cls[k].selector + '{background-position:' +
+    //                 (images[i].cls[k].position[0] + -x) + 'px ' +
+    //                 (images[i].cls[k].position[1] + -y) + 'px}';
+    //             cls.push(images[i].cls[k].selector);
+    //         }
+    //         if (direct === 'x') {
+    //             y += images[i].height() + this.settings.margin;
+    //         } else {
+    //             x += images[i].width() + this.settings.margin;
+    //         }
+    //     }
 
-        await this.after(image, cls, direct, null);
-    },
+    //     await this.after(image, cls, direct, null);
+    // },
     zFill: async function (list) {
         let y_;
         if (!list || list.length === 0) {
@@ -261,6 +272,7 @@ Generator.prototype = {
                     url: item.getImageUrl(),
                     cls: [],
                     image: img,
+                    image2x: item.image2x_,
                     w: size.width + this.settings.margin,
                     h: size.height + this.settings.margin
                 };
@@ -310,7 +322,10 @@ Generator.prototype = {
         //left, zero
         //zero | left
 
+        // 创建一张大图
         let image = await createImg(max[left] + max[zero], height);
+        let image2x = await createImg((max[left] + max[zero]) * 2, height * 2);
+
         let x = 0,
             y = 0,
             j = 0,
@@ -324,6 +339,10 @@ Generator.prototype = {
                 y = current.fit.y;
 
                 image = await drawImg(image, current.image, x, y);
+                if (this.settings.support2x && current.image2x) {
+                    image2x = await drawImg(image2x, current.image2x, x * 2, y * 2);
+                }
+
                 for (j = 0, count = current.cls.length; j < count; j++) {
                     let x_ = current.cls[j].position[0] + -x;
                     let y_ = current.cls[j].position[1] + -y;
@@ -331,6 +350,7 @@ Generator.prototype = {
                     this.css += current.cls[j].selector + '{background-position:' +
                         x_ + 'px ' +
                         y_ + 'px;}';
+
                     cls.push(current.cls[j].selector);
                 }
             }
@@ -361,7 +381,11 @@ Generator.prototype = {
                 y += current.h;
             }
         }
-        await this.after(image, cls, 'z');
+
+        await this.after({
+            image,
+            image2x
+        }, cls, 'z');
     },
     genCss: async function () {
         let that = this;
@@ -395,8 +419,8 @@ Generator.prototype = {
             insertToObject(list_, direct, bg);
         }
 
-        await that.fill(list_['x'], 'x');
-        await that.fill(list_['y'], 'y');
+        // await that.fill(list_['x'], 'x');
+        // await that.fill(list_['y'], 'y');
         await that.zFill(list_['z']);
     }
 };
